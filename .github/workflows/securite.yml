@@ -36,11 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build -t tp1-hello:1.0 -f docker/Dockerfile .
-      - uses: aquasecurity/trivy-action@v0.33.1
-        with:
-          image-ref: tp1-hello:1.0
-          severity: HIGH,CRITICAL
-          exit-code: 1
+      - run: docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --severity HIGH,CRITICAL --exit-code 1 tp1-hello:1.0
 
   deploiement:
     if: github.event_name == 'workflow_dispatch'
