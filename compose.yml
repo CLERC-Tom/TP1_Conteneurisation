@@ -1,0 +1,8 @@
+services:
+  webserver:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+    restart: always
+    volumes:
+      - ./app/:/usr/share/nginx/html/:ro
