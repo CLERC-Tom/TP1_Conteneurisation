@@ -6,7 +6,8 @@ La différence fondamentale tient à la **couche virtualisée** : le **matériel
 
 - **Machine virtuelle** : un hyperviseur (type 1 comme *ESXi*, *Hyper-V* ou *KVM* ; type 2 comme *VirtualBox*) présente à chaque VM un matériel virtuel. Chaque VM exécute son propre **OS invité**, avec son noyau.
 - **Conteneur** : un moteur (*Docker*, *containerd*, *Podman*) lance des processus isolés par le **noyau de l'hôte**. Le conteneur n'embarque que l'application et ses dépendances, **pas de noyau**.
-![image_1](doc\image\vm_vs_conteneur.png)
+
+![image_1](image/vm_vs_conteneur.png)
 
 ## 2. Isolation 
 
@@ -28,7 +29,8 @@ Une VM a ses ressources **réservées**. Les conteneurs **partagent** davantage 
 ## 3. Performance
 Le conteneur démarre en une seconde environ et pèse quelques dizaines de Mo, contre
 plusieurs dizaines de secondes et plusieurs Go pour une VM.
-![image_1](doc\image\performance.png)
+
+![image_2](image/performance.png)
 
 ## 4. Sécurité
 Le noyau partagé est le point faible structurel du conteneur : une seule faille du noyau
