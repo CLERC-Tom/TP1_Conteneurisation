@@ -1,0 +1,8 @@
+# Namespace qui contient toute l'application
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: web
+  labels:
+    # Pod Security Standards : on refuse les pods root et privilégiés
+    pod-security.kubernetes.io/enforce: restricted

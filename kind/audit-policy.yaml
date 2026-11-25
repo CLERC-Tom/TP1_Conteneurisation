@@ -1,0 +1,5 @@
+# Journal d'audit : on enregistre qui fait quoi (utilisateur, action, ressource)
+apiVersion: audit.k8s.io/v1
+kind: Policy
+rules:
+  - level: Metadata
