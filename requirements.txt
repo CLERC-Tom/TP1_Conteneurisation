@@ -1,40 +1,23 @@
-# Prérequis pour lancer la partie Kubernetes du TP1 (tâche 3)
-# Ce ne sont pas des paquets pip : ce sont les outils à installer sur votre machine.
+Outils à installer (aucun paquet pip) : Docker, kubectl, kind.
 
-# ---------------------------------------------------------------
-# 1. Docker (obligatoire : kind fait tourner Kubernetes dans Docker)
-# ---------------------------------------------------------------
-# Linux   : Docker Engine  -> https://docs.docker.com/engine/install/
-# Mac/Win : Docker Desktop -> https://docs.docker.com/desktop/
-# Vérifier : docker version   (le client ET le serveur doivent répondre)
-# Prévoir environ 4 Go de RAM libre pour le cluster.
+Mac
+  brew install --cask docker
+  brew install kubectl kind
 
-# ---------------------------------------------------------------
-# 2. kubectl (le client qui parle au cluster)
-# ---------------------------------------------------------------
-# Version : au plus 1 version mineure d'écart avec le cluster (cluster testé : v1.37.0)
-# Linux   : curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-#           sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-# Mac     : brew install kubectl
-# Windows : winget install -e --id Kubernetes.kubectl
-# Vérifier : kubectl version --client
+Windows (PowerShell)
+  winget install -e --id Docker.DockerDesktop
+  winget install -e --id Kubernetes.kubectl
+  winget install -e --id Kubernetes.kind
 
-# ---------------------------------------------------------------
-# 3. kind (Kubernetes IN Docker : le cluster local)
-# ---------------------------------------------------------------
-# Linux   : curl -Lo ./kind https://github.com/kubernetes-sigs/kind/releases/latest/download/kind-linux-amd64
-#           chmod +x ./kind && sudo mv ./kind /usr/local/bin/kind
-# Mac     : brew install kind
-# Windows : winget install Kubernetes.kind
-# Vérifier : kind version
+Linux
+  curl -fsSL https://get.docker.com | sh
+  sudo usermod -aG docker $USER
+  ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+  curl -Lo kubectl "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/$ARCH/kubectl"
+  curl -Lo kind "https://kind.sigs.k8s.io/dl/latest/kind-linux-$ARCH"
+  chmod +x kubectl kind && sudo mv kubectl kind /usr/local/bin/
 
-# ---------------------------------------------------------------
-# Lancer la partie Kubernetes (depuis la racine du dépôt)
-# ---------------------------------------------------------------
-# kind create cluster --name tp1
-# kubectl apply -f k8s/
-# kubectl get pods                       # attendre 3 pods en Running
-# kubectl port-forward service/serveur-web 8080:80
-# -> ouvrir http://localhost:8080
-#
-# Arrêter : kind delete cluster --name tp1
+Vérification (Docker Desktop lancé, 4 Go de RAM libres)
+  docker version
+  kubectl version --client
+  kind version
