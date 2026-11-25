@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tp1-hello
+  labels:
+    app: tp1-hello
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: tp1-hello
+  template:
+    metadata:
+      labels:
+        app: tp1-hello
+    spec:
+      containers:
+        - name: tp1-hello
+          image: tp1-hello:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 101
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
