@@ -1,0 +1,8 @@
+Scan APRES correction
+
+== Checkov : dossier k8s (hors pods de démonstration) ==
+Passed checks: 97, Failed checks: 0, Skipped checks: 0
+Aucune alerte restante.
+
+== Trivy : image tp1-hello (Dockerfile corrigé) ==
+0 vulnérabilités HIGH ou CRITICAL

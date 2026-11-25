@@ -10,11 +10,13 @@ Conteneurisation d'une page web statique (Hello World) avec nginx, optimisation 
 - [Organisation du dépôt](#organisation-du-dépôt)
 - [Choix techniques](#choix-techniques)
 - [Prérequis et exécution](#prérequis-et-exécution)
+- [Comment tester](#comment-tester)
 - [Tâche 1 : Dockerfile](#tâche-1--dockerfile)
 - [Tâche 2 : Optimisation et sécurité](#tâche-2--optimisation-et-sécurité)
 - [Tâche 3 : Déploiement Kubernetes](#tâche-3--déploiement-kubernetes)
 - [Tâche 4 : Ressources et scalabilité](#tâche-4--ressources-et-scalabilité)
 - [Tâche 5 : VM contre conteneur](#tâche-5--vm-contre-conteneur)
+- [TP5 : Sécurisation de Kubernetes et du pipeline](#tp5--sécurisation-de-kubernetes-et-du-pipeline)
 - [Répartition des tâches](#répartition-des-tâches)
 - [Équipe](#équipe)
 
@@ -40,6 +42,8 @@ Objectif : comprendre les principes de la conteneurisation, comparer machines vi
 ├── .dockerignore        fichiers exclus du contexte de build
 ├── .gitignore           fichiers non suivis (.env)
 ├── k8s/                 manifests Kubernetes (Deployment, Service)
+│   └── securite/        namespace, RBAC, Network Policy, pods de test
+├── kind/                configuration du cluster (audit, chiffrement)
 ├── doc/                 analyse VM contre conteneur, répartition des tâches, captures
 ├── .github/workflows/   CI GitHub Actions
 └── requirements.txt     outils à installer
@@ -71,19 +75,84 @@ Toutes les commandes se lancent depuis la racine du dépôt.
 | Lancer avec Compose | `docker compose up -d --wait` |
 | Arrêter Compose | `docker compose down` |
 | Créer le cluster | `kind create cluster --name tp1` |
-| Déployer | `kubectl apply -f k8s/` |
-| Attendre les pods | `kubectl wait --for=condition=available deployment/web-hello-world --timeout=120s` |
-| Accéder au site | `kubectl port-forward service/serveur-web 8080:80` |
+| Créer le namespace | `kubectl apply -f k8s/securite/namespace.yaml -f k8s/securite/rbac.yaml` |
+| Déployer | `kubectl apply -f k8s/deployment.yaml -f k8s/service.yaml` |
+| Attendre les pods | `kubectl wait --for=condition=available -n web deployment/web-hello-world --timeout=120s` |
+| Accéder au site | `kubectl port-forward -n web service/serveur-web 8080:80` |
 | Supprimer le cluster | `kind delete cluster --name tp1` |
 
 Le site est disponible sur http://localhost:8080.
 
+## Comment tester
+
+Cinq étapes, dans l'ordre. Chaque étape indique ce qu'on doit voir si tout fonctionne.
+
+### Étape 1 : installer les outils (requirements.txt)
+
+`requirements.txt` n'est pas un fichier à exécuter : il contient les commandes à copier dans un terminal. Ouvrir le terminal, coller le bloc de son système, puis lancer les trois commandes de vérification.
+
+| | Mac | Windows | Linux |
+|---|-----|---------|-------|
+| Terminal à ouvrir | Terminal | PowerShell en administrateur | Terminal |
+| Installer Docker | `brew install --cask docker` | `winget install -e --id Docker.DockerDesktop` | `curl -fsSL https://get.docker.com \| sh` |
+| Installer kubectl et kind | `brew install kubectl kind` | `winget install -e --id Kubernetes.kubectl` puis `winget install -e --id Kubernetes.kind` | commandes `curl` du fichier |
+| Après l'installation | Lancer Docker Desktop | Lancer Docker Desktop, redémarrer PowerShell | `sudo usermod -aG docker $USER`, puis se reconnecter |
+
+Les commandes complètes de chaque système sont dans [requirements.txt](requirements.txt).
+
+Vérification, la même sur les trois systèmes :
+
+```
+docker version
+kubectl version --client
+kind version
+```
+
+Ce qu'on doit voir : `docker version` affiche une partie `Client` et une partie `Server`, les deux autres affichent un numéro de version. Si la partie `Server` manque, Docker Desktop n'est pas lancé.
+
+### Étape 2 : récupérer le projet
+
+```
+git clone git@github.com:CLERC-Tom/TP1_Conteneurisation.git
+cd TP1_Conteneurisation
+```
+
+### Étape 3 : tester Docker
+
+| Commande | Ce qu'on doit voir |
+|----------|--------------------|
+| `docker build -t tp1-hello:1.0 -f docker/Dockerfile .` | Le build se termine sans erreur |
+| `docker run --rm tp1-hello:1.0 id` | `uid=101(nginx)`, donc pas root |
+| `docker compose up -d --wait` | Le conteneur passe à `Healthy` |
+| `curl http://localhost:8080` (sous Windows : `curl.exe http://localhost:8080`) | La page `Hello World` |
+| `docker compose down` | Le conteneur et le réseau sont supprimés |
+
+### Étape 4 : tester Kubernetes
+
+| Commande | Ce qu'on doit voir |
+|----------|--------------------|
+| `kind create cluster --name tp1` | `Set kubectl context to "kind-tp1"` |
+| `kubectl apply -f k8s/securite/namespace.yaml -f k8s/securite/rbac.yaml` | 4 objets `created` |
+| `kubectl apply -f k8s/deployment.yaml -f k8s/service.yaml` | Deployment et Service `created` |
+| `kubectl wait --for=condition=available -n web deployment/web-hello-world --timeout=120s` | `condition met` |
+| `kubectl get pods -n web` | 3 pods `1/1 Running` |
+| `kubectl port-forward -n web service/serveur-web 8080:80` puis, dans un second terminal, `curl http://localhost:8080` | La page d'accueil de nginx |
+| `kind delete cluster --name tp1` | Le cluster est supprimé |
+
+### Étape 5 : tester la sécurité (TP5)
+
+Cette étape se lance sur Mac et Linux. Sous Windows, il faut passer par WSL2 : le cluster monte des fichiers depuis `/tmp`. Les commandes et les résultats attendus sont dans la section [TP5](#tp5--sécurisation-de-kubernetes-et-du-pipeline). Pour voir les contrôles du pipeline, ouvrir l'onglet Actions du dépôt GitHub : les jobs `secrets`, `manifestes` et `image` doivent être verts.
+
 ## Tâche 1 : Dockerfile
 
-Le fichier `docker/Dockerfile` fait trois instructions : base nginx non-root, copie de `app/`, port 8080.
+Le fichier `docker/Dockerfile` part d'une base nginx non-root, met à jour les paquets système (correction des vulnérabilités, voir le TP5), copie `app/` et expose le port 8080.
 
 ```
 FROM nginxinc/nginx-unprivileged:alpine
+
+USER root
+RUN apk upgrade --no-cache
+USER 101
 
 COPY app/ /usr/share/nginx/html/
 
@@ -108,9 +177,10 @@ Compose utilise l'image publique `nginxinc/nginx-unprivileged:alpine` et monte `
 |-------|--------|-------------|-------------|
 | `nginx:latest` | 261 Mo | root | Référence avant optimisation |
 | `nginx:1.27-alpine` | 76,8 Mo | root | Légère, mais s'exécute en root |
-| `tp1-hello:1.0` (notre image) | 91,3 Mo | non-root (uid 101) | Alpine et non-root |
+| `tp1-hello:1.0` (avant la mise à jour des paquets) | 91,3 Mo | non-root (uid 101) | Alpine et non-root |
+| `tp1-hello:1.0` (notre image finale) | 112 Mo | non-root (uid 101) | Alpine, non-root et 0 vulnérabilité HIGH ou CRITICAL |
 
-Notre image est environ 65 % plus petite que `nginx:latest` (261 Mo contre 91,3 Mo). Elle pèse 14,5 Mo de plus que `nginx:1.27-alpine`, un surcoût accepté pour ne pas tourner en root.
+Notre image finale est environ 57 % plus petite que `nginx:latest` (261 Mo contre 112 Mo). Elle pèse 35 Mo de plus que `nginx:1.27-alpine`, un surcoût accepté pour ne pas tourner en root et corriger les vulnérabilités. La capture ci-dessous a été prise avant la mise à jour des paquets (91,3 Mo).
 
 ![taille des images](doc/image/docker-build-taille.png)
 
@@ -120,6 +190,7 @@ Notre image est environ 65 % plus petite que `nginx:latest` (261 Mo contre 91,3 
 |----------|----------------|----|
 | Utilisateur non-root | `nginx-unprivileged`, uid 101 | Dockerfile |
 | Port non privilégié | 8080 au lieu de 80 | Dockerfile, Compose |
+| Paquets système à jour | `apk upgrade` dans le Dockerfile, 14 vulnérabilités corrigées dans l'image `tp1-hello` | Dockerfile |
 | Pas de secrets dans l'image | `.dockerignore` exclut `.env`, `.git` et tout ce qui est hors `app/` | `.dockerignore` |
 | Système de fichiers en lecture seule | `read_only: true`, `/tmp` en tmpfs de 16 Mo | `compose.yml` |
 | Aucune capability Linux | `cap_drop: ALL` | `compose.yml` |
@@ -137,8 +208,8 @@ Le cluster est un cluster local `kind`, piloté avec `kubectl`.
 
 | Objet | Fichier | Caractéristiques |
 |-------|---------|------------------|
-| Deployment `web-hello-world` | `k8s/deployment.yaml` | image `nginxinc/nginx-unprivileged:alpine`, label `app: hello-world` |
-| Service `serveur-web` | `k8s/service.yaml` | ClusterIP, port 80 vers le port 8080 des pods |
+| Deployment `web-hello-world` | `k8s/deployment.yaml` | namespace `web`, image `nginxinc/nginx-unprivileged:alpine`, label `app: hello-world` |
+| Service `serveur-web` | `k8s/service.yaml` | namespace `web`, ClusterIP, port 80 vers le port 8080 des pods |
 
 Les trois pods passent à `Running` et le Service répond via `kubectl port-forward` :
 
@@ -161,7 +232,7 @@ La page servie est la page d'accueil par défaut de nginx : le Deployment utilis
 Pour changer le nombre de replicas :
 
 ```
-kubectl scale deployment web-hello-world --replicas=5
+kubectl scale -n web deployment web-hello-world --replicas=5
 ```
 
 ## Tâche 5 : VM contre conteneur
@@ -178,6 +249,105 @@ L'analyse complète est dans [doc/analyse VM contre conteneur.md](doc/analyse%20
 | Compatibilité OS | Tout OS invité | Même noyau que l'hôte |
 
 La VM reste la référence quand l'isolation prime. Le conteneur s'impose quand la vitesse, la densité et la portabilité priment.
+
+## TP5 : Sécurisation de Kubernetes et du pipeline
+
+Suite du TP1 : durcissement du cluster puis pipeline qui bloque les déploiements non conformes. Les manifests sont dans `k8s/securite/` et la configuration du cluster dans `kind/`. Les sorties de scan sont dans `doc/securite/` et la synthèse des risques dans [doc/securite/synthese-risques.md](doc/securite/synthese-risques.md).
+
+### Cluster durci
+
+Toutes les commandes se lancent depuis la racine du dépôt (Mac et Linux). La clé de chiffrement est générée au lancement et n'est jamais commitée.
+
+```
+sed "s|CLE_A_GENERER|$(head -c 32 /dev/urandom | base64)|" kind/encryption-config.yaml > /tmp/encryption-config.yaml
+kind create cluster --name tp5 --config kind/kind-config.yaml
+kubectl apply -f k8s/securite/namespace.yaml -f k8s/securite/rbac.yaml
+kubectl apply -f k8s/deployment.yaml -f k8s/service.yaml -f k8s/securite/demo-backend-database.yaml
+```
+
+### Ce qui est mis en place
+
+| Contrôle | Fichier | Résultat attendu |
+|----------|---------|------------------|
+| RBAC limité au namespace | `k8s/securite/rbac.yaml` | `app-sa` lit les pods du namespace `web`, rien d'autre |
+| Pod Security `restricted` | `k8s/securite/namespace.yaml` | Un pod root ou privilégié est refusé |
+| Network Policy deny-all | `k8s/securite/networkpolicy.yaml` | Seul le backend atteint la database sur le port 5432 |
+| Deployment durci | `k8s/deployment.yaml` | Non-root uid 10101, lecture seule, `drop ALL`, seccomp, probes, image par digest |
+| Secret hors manifeste | `kubectl create secret` | Aucune valeur dans le dépôt, chiffré dans etcd |
+| Journal d'audit | `kind/audit-policy.yaml` | Chaque action d'un utilisateur est tracée |
+
+### Tests
+
+RBAC : les droits du compte de service `app-sa`.
+
+```
+kubectl auth can-i get pods -n web --as=system:serviceaccount:web:app-sa
+kubectl auth can-i delete pods -n web --as=system:serviceaccount:web:app-sa
+kubectl auth can-i get secrets -n web --as=system:serviceaccount:web:app-sa
+```
+
+| Action | Résultat |
+|--------|----------|
+| Lire les pods du namespace `web` | autorisé |
+| Supprimer un pod | refusé |
+| Lire les Secrets | refusé |
+| Lire les pods du namespace `default` | refusé |
+
+Pod Security : `kubectl apply -f k8s/securite/pod-privilegie-test.yaml` est rejeté (privileged, root, capabilities, seccomp).
+
+Network Policy, avant puis après l'application de `k8s/securite/networkpolicy.yaml` :
+
+```
+kubectl -n web exec backend -- wget -qO- -T 3 http://database:5432
+kubectl -n web exec intrus -- wget -qO- -T 3 http://database:5432
+```
+
+| Pod | Avant la policy | Après la policy |
+|-----|-----------------|-----------------|
+| `backend` | répond | répond |
+| `intrus` | répond | bloqué |
+
+Secret :
+
+```
+kubectl -n web create secret generic db-secret --from-literal=password="$(head -c 12 /dev/urandom | base64)"
+```
+
+Dans etcd, la valeur est chiffrée (préfixe `k8s:enc:aescbc:v1:cle1`).
+
+Audit : après `kubectl -n web get pods --as=utilisateur-test`, l'action est retrouvée dans le journal du noeud.
+
+```
+docker exec tp5-control-plane grep utilisateur-test /var/log/kubernetes/audit.log
+```
+
+Elle apparaît avec l'utilisateur `utilisateur-test`, l'action `list` sur les pods du namespace `web` et le code 403.
+
+### Scans
+
+Trivy (image) et Checkov (manifests), avant et après correction. Sorties complètes : [scan-avant.txt](doc/securite/scan-avant.txt) et [scan-apres.txt](doc/securite/scan-apres.txt).
+
+| Outil | Avant | Après |
+|-------|-------|-------|
+| Checkov, manifests `k8s/` | 16 alertes | 0 alerte |
+| Trivy, image, HIGH et CRITICAL | 14 vulnérabilités | 0 vulnérabilité |
+
+Périmètre : avant, les deux manifests de `main` (`deployment.yaml` et `service.yaml`) ; après, le dossier `k8s/` sans les pods de démonstration et de test, volontairement non conformes. Trivy scanne l'image `tp1-hello:1.0` construite par le Dockerfile. Le Deployment utilise l'image publique épinglée par digest, qui garde ses vulnérabilités tant qu'elle n'est pas reconstruite (voir la synthèse des risques).
+
+Corrections faites : `securityContext` complet et seccomp, uid élevé, disque en lecture seule, probes, `imagePullPolicy: Always`, image par digest, namespace dédié, token de compte de service désactivé, `apk upgrade` dans le Dockerfile.
+
+### Pipeline
+
+Le workflow `.github/workflows/securite.yml` tourne à chaque push et pull request vers `main`.
+
+| Job | Outil | Rôle |
+|-----|-------|------|
+| `secrets` | gitleaks | Cherche des secrets dans l'historique |
+| `manifestes` | Checkov | Analyse les manifests `k8s/` |
+| `image` | Trivy | Bloque si l'image a une vulnérabilité HIGH ou CRITICAL |
+| `deploiement` | kind | Déploie dans un cluster de test, lancé à la main avec l'environnement `production` |
+
+Le job `deploiement` ne démarre que si les trois contrôles passent. Les risques qui restent sont dans [doc/securite/synthese-risques.md](doc/securite/synthese-risques.md).
 
 ## Répartition des tâches
 

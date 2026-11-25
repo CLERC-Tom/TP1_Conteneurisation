@@ -1,0 +1,37 @@
+Scan AVANT correction (manifests de main et image d'origine)
+
+== Checkov : k8s/deployment.yaml et k8s/service.yaml ==
+Passed checks: 73, Failed checks: 16, Skipped checks: 0
+Check: CKV_K8S_37: "Minimize the admission of containers with capabilities assigned"
+Check: CKV_K8S_31: "Ensure that the seccomp profile is set to docker/default or runtime/default"
+Check: CKV_K8S_8: "Liveness Probe Should be Configured"
+Check: CKV_K8S_20: "Containers should not run with allowPrivilegeEscalation"
+Check: CKV_K8S_15: "Image Pull Policy should be Always"
+Check: CKV_K8S_40: "Containers should run as a high UID to avoid host conflict"
+Check: CKV_K8S_22: "Use read-only filesystem for containers where possible"
+Check: CKV_K8S_9: "Readiness Probe Should be Configured"
+Check: CKV_K8S_28: "Minimize the admission of containers with the NET_RAW capability"
+Check: CKV_K8S_29: "Apply security context to your pods and containers"
+Check: CKV_K8S_30: "Apply security context to your containers"
+Check: CKV_K8S_38: "Ensure that Service Account Tokens are only mounted where necessary"
+Check: CKV_K8S_21: "The default namespace should not be used"
+Check: CKV_K8S_23: "Minimize the admission of root containers"
+Check: CKV_K8S_43: "Image should use digest"
+Check: CKV_K8S_21: "The default namespace should not be used"
+
+== Trivy : image tp1-hello (Dockerfile d'origine) ==
+14 vulnérabilités HIGH ou CRITICAL
+brotli-libs CVE-2026-111497 CRITICAL 1.2.0-r1 -> 1.2.1-r0
+curl CVE-2026-92392 HIGH 8.22.0-r0 -> 8.23.0-r0
+libcurl CVE-2026-92392 HIGH 8.22.0-r0 -> 8.23.0-r0
+libexpat CVE-2026-113351 HIGH 2.9.0-r0 -> 2.10.0-r0
+libexpat CVE-2026-115506 HIGH 2.9.0-r0 -> 2.10.0-r0
+libexpat CVE-2026-117610 HIGH 2.9.0-r0 -> 2.10.0-r0
+libexpat CVE-2026-118370 HIGH 2.9.0-r0 -> 2.10.0-r0
+libxml2 CVE-2026-86144 HIGH 2.13.9-r2 -> 2.13.9-r3
+libxslt CVE-2026-125350 HIGH 1.1.43-r3 -> 1.1.43-r4
+libxslt CVE-2026-87636 HIGH 1.1.43-r3 -> 1.1.43-r4
+libxslt CVE-2026-9947 HIGH 1.1.43-r3 -> 1.1.43-r4
+musl CVE-2026-107891 HIGH 1.2.6-r2 -> 1.2.6-r3
+musl-utils CVE-2026-107891 HIGH 1.2.6-r2 -> 1.2.6-r3
+zlib CVE-2026-85091 HIGH 1.3.2-r0 -> 1.3.2-r1

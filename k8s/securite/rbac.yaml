@@ -1,0 +1,32 @@
+# Compte de service utilisé par l'application
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: app-sa
+  namespace: web
+---
+# Droits limités : lire les pods du namespace web, rien d'autre
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: lecteur-pods
+  namespace: web
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+---
+# On donne ce rôle au compte de service
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: app-sa-lecteur-pods
+  namespace: web
+subjects:
+  - kind: ServiceAccount
+    name: app-sa
+    namespace: web
+roleRef:
+  kind: Role
+  name: lecteur-pods
+  apiGroup: rbac.authorization.k8s.io

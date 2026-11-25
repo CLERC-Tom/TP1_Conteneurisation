@@ -1,0 +1,72 @@
+# 1. Tout est interdit par défaut (entrée et sortie)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all
+  namespace: web
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# 2. La database accepte uniquement le backend sur le port 5432
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: database-accepte-backend
+  namespace: web
+spec:
+  podSelector:
+    matchLabels:
+      role: database
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              role: backend
+      ports:
+        - port: 5432
+---
+# 3. Le backend a le droit d'appeler la database sur 5432 et de faire du DNS
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backend-appelle-database
+  namespace: web
+spec:
+  podSelector:
+    matchLabels:
+      role: backend
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              role: database
+      ports:
+        - port: 5432
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+---
+# 4. Le site web reste accessible sur le port 8080
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: site-web-accessible
+  namespace: web
+spec:
+  podSelector:
+    matchLabels:
+      app: hello-world
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 8080

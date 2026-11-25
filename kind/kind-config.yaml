@@ -1,0 +1,38 @@
+# Cluster kind avec journal d'audit et chiffrement des Secrets
+# À lancer depuis la racine du dépôt
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraMounts:
+      # Fichiers de config copiés dans le noeud
+      - hostPath: ./kind/audit-policy.yaml
+        containerPath: /etc/kubernetes/audit-policy.yaml
+      - hostPath: /tmp/encryption-config.yaml
+        containerPath: /etc/kubernetes/encryption-config.yaml
+    kubeadmConfigPatches:
+      - |
+        kind: ClusterConfiguration
+        apiServer:
+          extraArgs:
+            - name: audit-policy-file
+              value: /etc/kubernetes/audit-policy.yaml
+            - name: audit-log-path
+              value: /var/log/kubernetes/audit.log
+            - name: encryption-provider-config
+              value: /etc/kubernetes/encryption-config.yaml
+          extraVolumes:
+            - name: audit-policy
+              hostPath: /etc/kubernetes/audit-policy.yaml
+              mountPath: /etc/kubernetes/audit-policy.yaml
+              readOnly: true
+              pathType: File
+            - name: encryption-config
+              hostPath: /etc/kubernetes/encryption-config.yaml
+              mountPath: /etc/kubernetes/encryption-config.yaml
+              readOnly: true
+              pathType: File
+            - name: audit-logs
+              hostPath: /var/log/kubernetes
+              mountPath: /var/log/kubernetes
+              pathType: DirectoryOrCreate

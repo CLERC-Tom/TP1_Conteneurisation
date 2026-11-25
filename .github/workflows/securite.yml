@@ -1,0 +1,51 @@
+name: Sécurité
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  secrets:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  manifestes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: k8s
+          framework: kubernetes
+          skip_path: k8s/securite/demo-backend-database.yaml,k8s/securite/pod-privilegie-test.yaml
+
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t tp1-hello:1.0 -f docker/Dockerfile .
+      - run: docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --severity HIGH,CRITICAL --exit-code 1 tp1-hello:1.0
+
+  deploiement:
+    if: github.event_name == 'workflow_dispatch'
+    needs: [secrets, manifestes, image]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: helm/kind-action@v1.10.0
+      - run: kubectl apply -f k8s/securite/namespace.yaml -f k8s/securite/rbac.yaml
+      - run: kubectl apply -f k8s/deployment.yaml -f k8s/service.yaml -f k8s/securite/networkpolicy.yaml
+      - run: kubectl -n web wait --for=condition=available deployment/web-hello-world --timeout=180s

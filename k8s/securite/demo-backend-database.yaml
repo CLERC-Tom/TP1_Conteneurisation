@@ -1,0 +1,82 @@
+# Trois pods de démonstration pour tester la Network Policy.
+# La database répond sur le port 5432, le backend a le droit de l'appeler,
+# l'intrus n'a pas le droit.
+
+# Database (simulée par un petit serveur qui répond sur 5432)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: database
+  namespace: web
+  labels:
+    role: database
+spec:
+  containers:
+    - name: database
+      image: hashicorp/http-echo:1.0
+      args: ["-listen=:5432", "-text=base de donnees"]
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+        seccompProfile:
+          type: RuntimeDefault
+---
+# Service pour joindre la database avec le nom "database"
+apiVersion: v1
+kind: Service
+metadata:
+  name: database
+  namespace: web
+spec:
+  selector:
+    role: database
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+# Backend : autorisé à parler à la database
+apiVersion: v1
+kind: Pod
+metadata:
+  name: backend
+  namespace: web
+  labels:
+    role: backend
+spec:
+  containers:
+    - name: backend
+      image: busybox:1.37
+      command: ["sleep", "3600"]
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+        seccompProfile:
+          type: RuntimeDefault
+---
+# Intrus : pas autorisé à parler à la database
+apiVersion: v1
+kind: Pod
+metadata:
+  name: intrus
+  namespace: web
+  labels:
+    role: intrus
+spec:
+  containers:
+    - name: intrus
+      image: busybox:1.37
+      command: ["sleep", "3600"]
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+        seccompProfile:
+          type: RuntimeDefault

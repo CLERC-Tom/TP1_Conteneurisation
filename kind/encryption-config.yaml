@@ -1,0 +1,14 @@
+# Chiffrement des Secrets dans etcd.
+# CLE_A_GENERER est remplacée par une clé aléatoire (voir le README),
+# la vraie clé ne doit jamais être commitée.
+apiVersion: apiserver.config.k8s.io/v1
+kind: EncryptionConfiguration
+resources:
+  - resources:
+      - secrets
+    providers:
+      - aescbc:
+          keys:
+            - name: cle1
+              secret: CLE_A_GENERER
+      - identity: {}

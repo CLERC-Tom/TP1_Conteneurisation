@@ -1,0 +1,14 @@
+# Pod volontairement dangereux : il doit être refusé par Pod Security
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-privilegie
+  namespace: web
+spec:
+  containers:
+    - name: test
+      image: busybox:1.37
+      command: ["sleep", "3600"]
+      securityContext:
+        privileged: true
+        runAsUser: 0

@@ -27,7 +27,7 @@ Statuts : À faire, En cours, Fait. Mettre à jour la colonne dès qu'une tâche
 
 - [x] Installer `kind` et `kubectl` (voir `requirements.txt`)
 - [x] Créer le cluster
-- [x] `kubectl apply -f k8s/` et vérifier que les pods sont `Running`
+- [x] `kubectl apply -f k8s/deployment.yaml -f k8s/service.yaml` et vérifier que les pods sont `Running`
 
 ## Tâche 4 : Ressources et scalabilité (Antoine)
 
@@ -43,3 +43,11 @@ Statuts : À faire, En cours, Fait. Mettre à jour la colonne dès qu'une tâche
 - [x] Captures et résultats des tâches 1 à 3 dans le README
 - [ ] CI verte
 - [ ] Dernière vérification que tout se lance sur Windows
+
+## TP5 : Sécurisation de Kubernetes et du pipeline (Tom)
+
+- [x] RBAC, Network Policy, Pod Security Standards dans `k8s/securite/`
+- [x] Secret hors manifeste, chiffrement etcd et journal d'audit (`kind/`)
+- [x] Scans Trivy et Checkov, 3 corrections ou plus (`doc/securite/`)
+- [x] Pipeline `.github/workflows/securite.yml`
+- [x] Synthèse des risques résiduels
