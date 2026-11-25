@@ -37,6 +37,8 @@ Objectif : comprendre les principes de la conteneurisation, comparer machines vi
 ├── app/                 page web (Hello World)
 ├── docker/Dockerfile    image de l'application
 ├── compose.yml          lancement local avec Docker Compose
+├── .dockerignore        fichiers exclus du contexte de build
+├── .gitignore           fichiers non suivis (.env)
 ├── k8s/                 manifests Kubernetes (Deployment, Service)
 ├── doc/                 analyse VM contre conteneur, répartition des tâches, captures
 ├── .github/workflows/   CI GitHub Actions
@@ -96,6 +98,8 @@ Le même résultat avec Docker Compose, le conteneur passe à l'état `Healthy` 
 
 ![docker compose](doc/image/compose-up.png)
 
+Compose utilise l'image publique `nginxinc/nginx-unprivileged:alpine` et monte `app/` en lecture seule, il ne construit pas `tp1-hello:1.0`.
+
 ## Tâche 2 : Optimisation et sécurité
 
 ### Taille de l'image
@@ -116,7 +120,7 @@ Notre image est environ 65 % plus petite que `nginx:latest` (261 Mo contre 91,3 
 |----------|----------------|----|
 | Utilisateur non-root | `nginx-unprivileged`, uid 101 | Dockerfile |
 | Port non privilégié | 8080 au lieu de 80 | Dockerfile, Compose |
-| Pas de secrets dans l'image | `.dockerignore` exclut `.env`, `.git`, `doc`, `k8s` | `.dockerignore` |
+| Pas de secrets dans l'image | `.dockerignore` exclut `.env`, `.git` et tout ce qui est hors `app/` | `.dockerignore` |
 | Système de fichiers en lecture seule | `read_only: true`, `/tmp` en tmpfs de 16 Mo | `compose.yml` |
 | Aucune capability Linux | `cap_drop: ALL` | `compose.yml` |
 | Pas d'élévation de privilèges | `no-new-privileges:true` | `compose.yml` |
