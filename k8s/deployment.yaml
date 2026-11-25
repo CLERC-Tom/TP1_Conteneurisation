@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: web-hello-world
 spec:
-  replicas: 5
+  replicas: 3
   selector:
     matchLabels:
       app: hello-world
@@ -15,3 +15,10 @@ spec:
       containers:
         - name: web
           image: nginxinc/nginx-unprivileged:alpine
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
