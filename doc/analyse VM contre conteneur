@@ -1,8 +1,0 @@
-# Analyse : VM contre conteneur
-
-## 1. Principe et fonctionnement
-
-La différence fondamentale tient à la **couche virtualisée** : le **matériel** pour la VM, le **système d'exploitation** pour le conteneur.
-
-- **Machine virtuelle** : un hyperviseur (type 1 comme *ESXi*, *Hyper-V* ou *KVM* ; type 2 comme *VirtualBox*) présente à chaque VM un matériel virtuel. Chaque VM exécute son propre **OS invité**, avec son noyau.
-- **Conteneur** : un moteur (*Docker*, *containerd*, *Podman*) lance des processus isolés par le **noyau de l'hôte**. Le conteneur n'embarque que l'application et ses dépendances, **pas de noyau**.
