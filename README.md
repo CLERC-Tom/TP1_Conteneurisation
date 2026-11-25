@@ -10,6 +10,7 @@ Conteneurisation d'une page web statique (Hello World) avec nginx, optimisation 
 - [Organisation du dépôt](#organisation-du-dépôt)
 - [Choix techniques](#choix-techniques)
 - [Prérequis et exécution](#prérequis-et-exécution)
+- [Comment tester](#comment-tester)
 - [Tâche 1 : Dockerfile](#tâche-1--dockerfile)
 - [Tâche 2 : Optimisation et sécurité](#tâche-2--optimisation-et-sécurité)
 - [Tâche 3 : Déploiement Kubernetes](#tâche-3--déploiement-kubernetes)
@@ -81,6 +82,66 @@ Toutes les commandes se lancent depuis la racine du dépôt.
 | Supprimer le cluster | `kind delete cluster --name tp1` |
 
 Le site est disponible sur http://localhost:8080.
+
+## Comment tester
+
+Cinq étapes, dans l'ordre. Chaque étape indique ce qu'on doit voir si tout fonctionne.
+
+### Étape 1 : installer les outils (requirements.txt)
+
+`requirements.txt` n'est pas un fichier à exécuter : il contient les commandes à copier dans un terminal. Ouvrir le terminal, coller le bloc de son système, puis lancer les trois commandes de vérification.
+
+| | Mac | Windows | Linux |
+|---|-----|---------|-------|
+| Terminal à ouvrir | Terminal | PowerShell en administrateur | Terminal |
+| Installer Docker | `brew install --cask docker` | `winget install -e --id Docker.DockerDesktop` | `curl -fsSL https://get.docker.com \| sh` |
+| Installer kubectl et kind | `brew install kubectl kind` | `winget install -e --id Kubernetes.kubectl` puis `winget install -e --id Kubernetes.kind` | commandes `curl` du fichier |
+| Après l'installation | Lancer Docker Desktop | Lancer Docker Desktop, redémarrer PowerShell | `sudo usermod -aG docker $USER`, puis se reconnecter |
+
+Les commandes complètes de chaque système sont dans [requirements.txt](requirements.txt).
+
+Vérification, la même sur les trois systèmes :
+
+```
+docker version
+kubectl version --client
+kind version
+```
+
+Ce qu'on doit voir : `docker version` affiche une partie `Client` et une partie `Server`, les deux autres affichent un numéro de version. Si la partie `Server` manque, Docker Desktop n'est pas lancé.
+
+### Étape 2 : récupérer le projet
+
+```
+git clone git@github.com:CLERC-Tom/TP1_Conteneurisation.git
+cd TP1_Conteneurisation
+```
+
+### Étape 3 : tester Docker
+
+| Commande | Ce qu'on doit voir |
+|----------|--------------------|
+| `docker build -t tp1-hello:1.0 -f docker/Dockerfile .` | Le build se termine sans erreur |
+| `docker run --rm tp1-hello:1.0 id` | `uid=101(nginx)`, donc pas root |
+| `docker compose up -d --wait` | Le conteneur passe à `Healthy` |
+| `curl http://localhost:8080` (sous Windows : `curl.exe http://localhost:8080`) | La page `Hello World` |
+| `docker compose down` | Le conteneur et le réseau sont supprimés |
+
+### Étape 4 : tester Kubernetes
+
+| Commande | Ce qu'on doit voir |
+|----------|--------------------|
+| `kind create cluster --name tp1` | `Set kubectl context to "kind-tp1"` |
+| `kubectl apply -f k8s/securite/namespace.yaml -f k8s/securite/rbac.yaml` | 4 objets `created` |
+| `kubectl apply -f k8s/deployment.yaml -f k8s/service.yaml` | Deployment et Service `created` |
+| `kubectl wait --for=condition=available -n web deployment/web-hello-world --timeout=120s` | `condition met` |
+| `kubectl get pods -n web` | 3 pods `1/1 Running` |
+| `kubectl port-forward -n web service/serveur-web 8080:80` puis, dans un second terminal, `curl http://localhost:8080` | La page d'accueil de nginx |
+| `kind delete cluster --name tp1` | Le cluster est supprimé |
+
+### Étape 5 : tester la sécurité (TP5)
+
+Cette étape se lance sur Mac et Linux. Sous Windows, il faut passer par WSL2 : le cluster monte des fichiers depuis `/tmp`. Les commandes et les résultats attendus sont dans la section [TP5](#tp5--sécurisation-de-kubernetes-et-du-pipeline). Pour voir les contrôles du pipeline, ouvrir l'onglet Actions du dépôt GitHub : les jobs `secrets`, `manifestes` et `image` doivent être verts.
 
 ## Tâche 1 : Dockerfile
 
