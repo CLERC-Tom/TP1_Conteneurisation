@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker compose up -d --wait
+      # .env n'est pas versionné : on part des valeurs d'exemple pour la CI
+      - run: cp .env.example .env
+      - run: docker compose up -d --build --wait
       - if: always()
         run: docker compose down
