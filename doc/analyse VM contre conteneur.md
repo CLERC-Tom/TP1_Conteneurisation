@@ -43,30 +43,13 @@ Monter le système de fichiers en lecture seule et fixer des limites cgroups.
 ## 5. Point positif et negatif
 | Critere     | Marchine Virtuelle | Conteneur    |
 |---------|-----|----------|
-| Isolation   | ✅ Forte, garantie par le matériel
-et l'hyperviseur  | ❌ Logique, dépend du noyau
-partagé    |
-| Sécurité     | ✅ Surface d'attaque étroite
-(hyperviseur)  |   ❌ Une faille noyau ou runtime
-expose tout l'hôte   |
-| Compatibilité OS   | ✅ N'importe quel OS invité
-(Windows sur hôte Linux, autre
-noyau)  | ❌ Même famille d'OS que l'hôte,
-même noyau|
-| Temps de
-démarrage   | ❌ Dizaines de secondes à
-minutes  | ✅ Moins d'une seconde à
-quelques secondes|
-| Portabilité   | ❌ Images lourdes, formats liés à
-l'hyperviseur  | ✅ Image standard OCI,
-identique du poste au cloud|
-| Isolation des
-ressourceshloé   | ✅ CPU et mémoire réservés, peu
-de voisin bruyant8  | ❌ Partage accru, dépend du
-réglage des cgroups|
-| Maintenance   | ❌ Un OS invité par VM à patcher
-et superviser  | ✅ Image immuable,
-reconstruite et redéployée|
+| Isolation   | ✅ Forte, garantie par le matériel et l'hyperviseur  | ❌ Logique, dépend du noyau partagé    |
+| Sécurité     | ✅ Surface d'attaque étroite (hyperviseur)  |   ❌ Une faille noyau ou runtime expose tout l'hôte   |
+| Compatibilité OS   | ✅ N'importe quel OS invité (Windows sur hôte Linux, autre noyau)  | ❌ Même famille d'OS que l'hôte, même noyau|
+| Temps de démarrage   | ❌ Dizaines de secondes à minutes  | ✅ Moins d'une seconde à quelques secondes|
+| Portabilité   | ❌ Images lourdes, formats liés à l'hyperviseur  | ✅ Image standard OCI, identique du poste au cloud|
+| Isolation des ressourceshloé   | ✅ CPU et mémoire réservés, peu de voisin bruyant8  | ❌ Partage accru, dépend du réglage des cgroups|
+| Maintenance   | ❌ Un OS invité par VM à patcher et superviser  | ✅ Image immuable, reconstruite et redéployée|
 
 ## 6. Conclusion
 VM et conteneur ne s'opposent pas : ils répondent à des compromis différents entre
