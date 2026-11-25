@@ -2,49 +2,44 @@
 
 | Tâche | Intitulé | Responsable | Statut |
 |-------|----------|-------------|--------|
-| 1 | Dockerfile | Tom et Thomas | À faire |
-| 2 | Optimiser et sécuriser l'image | Thomas | À faire |
-| 3 | Déployer sur Kubernetes | Aymeric | À faire |
-| 4 | Ressources et scalabilité | Antoine | À faire |
-| 5 | Analyse VM contre conteneur | Julie | À faire |
-| 6 | Rendu | Tom | À faire |
+| 1 | Dockerfile | Tom et Thomas | Fait |
+| 2 | Optimiser et sécuriser l'image | Thomas | Fait |
+| 3 | Déployer sur Kubernetes | Aymeric | Fait |
+| 4 | Ressources et scalabilité | Antoine | Fait |
+| 5 | Analyse VM contre conteneur | Julie | Fait |
+| 6 | Rendu | Tom | En cours |
 
 Statuts : À faire, En cours, Fait. Mettre à jour la colonne dès qu'une tâche change d'état.
 
 ## Tâche 1 : Dockerfile (Tom et Thomas)
 
-- [ ] Écrire `docker/Dockerfile` : base nginx, copie de `app/`, port 8080
-- [ ] Adapter `compose.yml` en `build:` au lieu de `nginx:latest` avec bind mount
-- [ ] Tester avec `docker build` puis `docker run`
+- [x] Écrire `docker/Dockerfile` : base nginx, copie de `app/`, port 8080
+- [x] Tester avec `docker build` puis `docker run`
 
 ## Tâche 2 : Optimiser et sécuriser l'image (Thomas)
 
-- [ ] Base légère (alpine) et utilisateur non-root (`nginxinc/nginx-unprivileged`)
-- [ ] `.dockerignore`, pas de secrets dans l'image
-- [ ] Mesurer la taille avant et après (par exemple `nginx:latest` contre l'image alpine), chiffre à mettre dans le rendu
-- [ ] Vérifier le non-root avec `docker run --rm <image> id`
+- [x] Base légère (alpine) et utilisateur non-root (`nginxinc/nginx-unprivileged`)
+- [x] `.dockerignore`, pas de secrets dans l'image
+- [x] Mesurer la taille avant et après : 261 Mo (`nginx:latest`) contre 91,3 Mo
+- [x] Vérifier le non-root avec `docker run --rm <image> id`
 
 ## Tâche 3 : Déployer sur Kubernetes (Aymeric)
 
-- [ ] Installer `kind` et `kubectl`
-- [ ] Créer le cluster et charger l'image (`kind load docker-image`)
-- [ ] `kubectl apply -f k8s/` et vérifier que les pods sont `Running`
-- [ ] Les manifests `deployment.yaml` et `service.yaml` existent déjà mais visent l'image `tp1-hello:1.0` : la tâche 1 doit produire ce nom, ou le manifest est adapté
+- [x] Installer `kind` et `kubectl` (voir `requirements.txt`)
+- [x] Créer le cluster
+- [x] `kubectl apply -f k8s/` et vérifier que les pods sont `Running`
 
 ## Tâche 4 : Ressources et scalabilité (Antoine)
 
-- [ ] Les `requests` et `limits` CPU et mémoire et les 3 replicas sont déjà dans le manifest
-- [ ] `kubectl scale` pour changer le nombre de replicas
-- [ ] `kubectl describe pod` pour montrer les limites
-- [ ] Captures pour le rendu
+- [x] `requests` et `limits` CPU et mémoire, 3 replicas
+- [x] `kubectl describe deployment` pour montrer les limites
 
 ## Tâche 5 : Analyse VM contre conteneur (Julie)
 
-- [ ] Rédiger l'analyse : isolation, performance, sécurité (noyau partagé, surface d'attaque, démarrage, poids)
-- [ ] Placer le texte dans le README ou dans `doc/`
+- [x] Analyse dans `doc/analyse VM contre conteneur.md`
 
 ## Tâche 6 : Rendu (Tom)
 
-- [ ] Captures et résultats des tâches 2 à 4 dans le README
+- [x] Captures et résultats des tâches 1 à 3 dans le README
 - [ ] CI verte
-- [ ] Dernière vérification que tout se lance sur Mac et Windows
+- [ ] Dernière vérification que tout se lance sur Windows

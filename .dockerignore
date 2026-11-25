@@ -1,0 +1,11 @@
+.git
+.github
+.gitattributes
+.gitignore
+.env
+doc
+k8s
+compose.yml
+README.md
+requirements.txt
+docker
