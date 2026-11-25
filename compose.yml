@@ -1,7 +1,23 @@
 services:
   webserver:
-    image: nginx:latest
+    image: nginxinc/nginx-unprivileged:alpine   # base légère + utilisateur non-root (UID 101)
     ports:
-      - "8080:80"
+      - "8080:8080"                             # port non privilégié dans le conteneur (R8)
+    networks:
+      - web                                     # réseau dédié, pas docker0 (R3, R5)
     volumes:
-      - ./app/:/usr/share/nginx/html/:ro
+      - ./app/:/usr/share/nginx/html/:ro        # données partagées en lecture seule (R14, R15)
+    read_only: true                             # système de fichiers racine en lecture seule (R12)
+    tmpfs:
+      - /tmp:size=16m,mode=1777                 # données temporaires, taille et mode fixés (R13)
+    cap_drop:
+      - ALL                                     # aucune capability (R8)
+    security_opt:
+      - no-new-privileges:true                  # pas d'élévation de privilèges (bonne pratique CIS)
+    mem_limit: 128m                             # limite mémoire (R10)
+    memswap_limit: 128m                         # limite mémoire + swap = pas de swap en plus (R10)
+    cpus: 0.5                                   # limite CPU (R11)
+    restart: unless-stopped
+
+networks:
+  web: {}
