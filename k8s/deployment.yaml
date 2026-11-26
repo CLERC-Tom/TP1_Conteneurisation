@@ -14,7 +14,8 @@ spec:
     spec:
       containers:
         - name: web
-          image: nginxinc/nginx-unprivileged:alpine
+          image: tp1-hello:1.0
+          imagePullPolicy: IfNotPresent
           resources:
             requests:
               cpu: 100m
