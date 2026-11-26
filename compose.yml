@@ -1,6 +1,9 @@
 services:
   webserver:
     image: tp1-hello:1.0   # base légère du Dockerfile
+    build:
+      context: .
+      dockerfile: docker/Dockerfile             # image construite depuis le Dockerfile du projet
     ports:
       - "8080:8080"                             # port non privilégié dans le conteneur (R8)
     networks:
