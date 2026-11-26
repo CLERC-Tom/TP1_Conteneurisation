@@ -1,6 +1,6 @@
 services:
   webserver:
-    image: nginxinc/nginx-unprivileged:alpine   # base légère + utilisateur non-root (UID 101)
+    image: tp1-hello:1.0   # base légère du Dockerfile
     ports:
       - "8080:8080"                             # port non privilégié dans le conteneur (R8)
     networks:
