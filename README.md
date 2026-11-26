@@ -52,7 +52,7 @@ Objectif : comprendre les principes de la conteneurisation, comparer machines vi
 |-------|--------|
 | Page statique dans `app/` | Rester simple pour se concentrer sur la conteneurisation |
 | `nginxinc/nginx-unprivileged:alpine` | Image légère, utilisateur non-root, port 8080 non privilégié |
-| Docker Compose | Lancement local en une commande, avec durcissement du conteneur |
+| Docker Compose | Lancement local en une commande : construit l'image depuis le Dockerfile et durcit le conteneur |
 | `kind` et `kubectl` | Cluster Kubernetes local dans Docker, identique sur Mac, Windows et Linux |
 | GitHub Actions | `docker compose up` à chaque push et pull request vers `main` |
 | Branche `main` protégée | Le check `compose` doit être vert avant tout merge |
@@ -69,7 +69,7 @@ Toutes les commandes se lancent depuis la racine du dépôt.
 | Construire l'image | `docker build -t tp1-hello:1.0 -f docker/Dockerfile .` |
 | Lancer le conteneur | `docker run -d --rm --name tp1 -p 8080:8080 tp1-hello:1.0` |
 | Arrêter le conteneur | `docker stop tp1` |
-| Lancer avec Compose | `docker compose up -d --wait` |
+| Lancer avec Compose | `docker compose up -d --build --wait` |
 | Arrêter Compose | `docker compose down` |
 | Créer le cluster | `kind create cluster --name tp1` |
 | Charger l'image dans le cluster | `kind load docker-image tp1-hello:1.0 --name tp1` |
@@ -120,7 +120,7 @@ cd TP1_Conteneurisation
 |----------|--------------------|
 | `docker build -t tp1-hello:1.0 -f docker/Dockerfile .` | Le build se termine sans erreur |
 | `docker run --rm tp1-hello:1.0 id` | `uid=101(nginx)`, donc pas root |
-| `docker compose up -d --wait` | Le conteneur passe à `Healthy` |
+| `docker compose up -d --build --wait` | L'image est construite, puis le conteneur passe à `Healthy` |
 | `curl http://localhost:8080` (sous Windows : `curl.exe http://localhost:8080`) | La page `Hello World` |
 | `docker compose down` | Le conteneur et le réseau sont supprimés |
 
@@ -158,7 +158,7 @@ Le même résultat avec Docker Compose, le conteneur passe à l'état `Healthy` 
 
 ![docker compose](doc/image/compose-up.png)
 
-Compose utilise l'image publique `nginxinc/nginx-unprivileged:alpine` et monte `app/` en lecture seule, il ne construit pas `tp1-hello:1.0`.
+Compose construit l'image `tp1-hello:1.0` depuis `docker/Dockerfile` (section `build:` de `compose.yml`), puis applique les protections de sécurité. Le dossier `app/` est monté en lecture seule.
 
 ## Tâche 2 : Optimisation et sécurité
 
