@@ -10,6 +10,7 @@ Conteneurisation d'une page web statique (Hello World) avec nginx, optimisation 
 - [Organisation du dépôt](#organisation-du-dépôt)
 - [Choix techniques](#choix-techniques)
 - [Prérequis et exécution](#prérequis-et-exécution)
+- [Comment tester](#comment-tester)
 - [Tâche 1 : Dockerfile](#tâche-1--dockerfile)
 - [Tâche 2 : Optimisation et sécurité](#tâche-2--optimisation-et-sécurité)
 - [Tâche 3 : Déploiement Kubernetes](#tâche-3--déploiement-kubernetes)
@@ -71,12 +72,71 @@ Toutes les commandes se lancent depuis la racine du dépôt.
 | Lancer avec Compose | `docker compose up -d --wait` |
 | Arrêter Compose | `docker compose down` |
 | Créer le cluster | `kind create cluster --name tp1` |
+| Charger l'image dans le cluster | `kind load docker-image tp1-hello:1.0 --name tp1` |
 | Déployer | `kubectl apply -f k8s/` |
 | Attendre les pods | `kubectl wait --for=condition=available deployment/web-hello-world --timeout=120s` |
 | Accéder au site | `kubectl port-forward service/serveur-web 8080:80` |
 | Supprimer le cluster | `kind delete cluster --name tp1` |
 
 Le site est disponible sur http://localhost:8080.
+
+## Comment tester
+
+Quatre étapes, dans l'ordre. Chaque étape indique ce qu'on doit voir si tout fonctionne.
+
+### Étape 1 : installer les outils (requirements.txt)
+
+`requirements.txt` n'est pas un fichier à exécuter : il contient les commandes à copier dans un terminal. Ouvrir le terminal, coller le bloc de son système, puis lancer les trois commandes de vérification.
+
+| | Mac | Windows | Linux |
+|---|-----|---------|-------|
+| Terminal à ouvrir | Terminal | PowerShell en administrateur | Terminal |
+| Installer Docker | `brew install --cask docker` | `winget install -e --id Docker.DockerDesktop` | `curl -fsSL https://get.docker.com \| sh` |
+| Installer kubectl et kind | `brew install kubectl kind` | `winget install -e --id Kubernetes.kubectl` puis `winget install -e --id Kubernetes.kind` | commandes `curl` du fichier |
+| Après l'installation | Lancer Docker Desktop | Lancer Docker Desktop, redémarrer PowerShell | `sudo usermod -aG docker $USER`, puis se reconnecter |
+
+Les commandes complètes de chaque système sont dans [requirements.txt](requirements.txt).
+
+Vérification, la même sur les trois systèmes :
+
+```
+docker version
+kubectl version --client
+kind version
+```
+
+Ce qu'on doit voir : `docker version` affiche une partie `Client` et une partie `Server`, les deux autres affichent un numéro de version. Si la partie `Server` manque, Docker Desktop n'est pas lancé.
+
+### Étape 2 : récupérer le projet
+
+```
+git clone git@github.com:CLERC-Tom/TP1_Conteneurisation.git
+cd TP1_Conteneurisation
+```
+
+### Étape 3 : tester Docker
+
+| Commande | Ce qu'on doit voir |
+|----------|--------------------|
+| `docker build -t tp1-hello:1.0 -f docker/Dockerfile .` | Le build se termine sans erreur |
+| `docker run --rm tp1-hello:1.0 id` | `uid=101(nginx)`, donc pas root |
+| `docker compose up -d --wait` | Le conteneur passe à `Healthy` |
+| `curl http://localhost:8080` (sous Windows : `curl.exe http://localhost:8080`) | La page `Hello World` |
+| `docker compose down` | Le conteneur et le réseau sont supprimés |
+
+### Étape 4 : tester Kubernetes
+
+L'image `tp1-hello:1.0` doit exister (étape 3).
+
+| Commande | Ce qu'on doit voir |
+|----------|--------------------|
+| `kind create cluster --name tp1` | `Set kubectl context to "kind-tp1"` |
+| `kind load docker-image tp1-hello:1.0 --name tp1` | `Image ... loaded` |
+| `kubectl apply -f k8s/` | Deployment et Service `created` |
+| `kubectl wait --for=condition=available deployment/web-hello-world --timeout=120s` | `condition met` |
+| `kubectl get pods` | 3 pods `1/1 Running` |
+| `kubectl port-forward service/serveur-web 8080:80` puis, dans un second terminal, `curl http://localhost:8080` | La page `Hello World` |
+| `kind delete cluster --name tp1` | Le cluster est supprimé |
 
 ## Tâche 1 : Dockerfile
 
@@ -137,14 +197,14 @@ Le cluster est un cluster local `kind`, piloté avec `kubectl`.
 
 | Objet | Fichier | Caractéristiques |
 |-------|---------|------------------|
-| Deployment `web-hello-world` | `k8s/deployment.yaml` | image `nginxinc/nginx-unprivileged:alpine`, label `app: hello-world` |
+| Deployment `web-hello-world` | `k8s/deployment.yaml` | image `tp1-hello:1.0` (construite par notre Dockerfile), `imagePullPolicy: IfNotPresent`, label `app: hello-world` |
 | Service `serveur-web` | `k8s/service.yaml` | ClusterIP, port 80 vers le port 8080 des pods |
 
 Les trois pods passent à `Running` et le Service répond via `kubectl port-forward` :
 
 ![pods et service](doc/image/k8s-pods-service.png)
 
-La page servie est la page d'accueil par défaut de nginx : le Deployment utilise l'image nginx publique et non `tp1-hello:1.0`.
+Le cluster `kind` ne voit pas les images du Docker local : il faut d'abord la lui envoyer avec `kind load docker-image tp1-hello:1.0 --name tp1`. Ensuite `imagePullPolicy: IfNotPresent` lui dit d'utiliser cette copie au lieu de la chercher sur Internet. La page servie est notre page Hello World :
 
 ![réponse du service](doc/image/k8s-curl.png)
 
